@@ -42,6 +42,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(mapNotifierProvider);
     final routeState = ref.watch(routeNotifierProvider);
+
+    print("routin point ${routeState.value?.points ?? ''}");
     return Scaffold(
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),

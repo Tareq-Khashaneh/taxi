@@ -6,10 +6,13 @@ import 'package:taxi_test/features/map/domain/entities/route.dart';
 import 'package:taxi_test/features/map/domain/entities/user_location.dart';
 import 'package:taxi_test/features/map/domain/repositories/location_repository.dart';
 
+import '../data_sources/routing_remote_data_source.dart';
+
 class LocationRepositoryImpl implements LocationRepository{
   final LocationRemoteDataSource locationRemoteDataSource;
+  final RouteRemoteDataSource routeRemoteDataSource;
 
-  LocationRepositoryImpl(this.locationRemoteDataSource);
+  LocationRepositoryImpl(this.locationRemoteDataSource, this.routeRemoteDataSource);
   @override
   Future<UserLocation> getCurrentLocation({required double lat,required double lon}) async{
        return await locationRemoteDataSource.getLocation(lat: lat, lon: lon);
@@ -17,7 +20,7 @@ class LocationRepositoryImpl implements LocationRepository{
 
   @override
   Future<Route> getRoute({required LatLng start, required LatLng end})async {
-  return await locationRemoteDataSource.getRoute(start: start, end: end);
+  return await routeRemoteDataSource.getRoute(start: start, end: end);
 
   }
 

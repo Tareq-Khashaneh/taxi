@@ -4,6 +4,7 @@ import '../../../domain/repositories/location_repository.dart';
 import 'location_remote_data_source_provider.dart';
 
 final locationRepositoryProvider = Provider<LocationRepository>((ref) {
-  final remoteDataSource = ref.watch(locationRemoteDataSourceProvider);
-  return LocationRepositoryImpl(remoteDataSource);
+  final locationRemoteDataSource = ref.watch(locationRemoteDataSourceProvider);
+  final routingRemoteDataSource = ref.watch(routingRemoteDataSourceProvider);
+  return LocationRepositoryImpl(locationRemoteDataSource,routingRemoteDataSource);
 });

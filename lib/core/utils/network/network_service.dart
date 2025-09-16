@@ -30,10 +30,10 @@ abstract class NetworkService {
 }
 
 class NetworkServiceDio implements NetworkService {
-  final Dio _dio;
+  final Dio dio;
   NetworkServiceDio()
-      : _dio = Dio(BaseOptions(
-          baseUrl: Api.baseUrl,
+      : dio = Dio(BaseOptions(
+          // baseUrl: baseUrl,
           receiveDataWhenStatusError: true,
           connectTimeout: const Duration(seconds: 8),
           receiveTimeout: const Duration(seconds: 8),
@@ -51,7 +51,7 @@ class NetworkServiceDio implements NetworkService {
     Map<String, dynamic>? queryParameters,
     Map<String, String>? headers,
   }) async {
-    final response = await _dio.request(
+    final response = await dio.request(
       endpoint,
       data: data,
       queryParameters: queryParameters,
