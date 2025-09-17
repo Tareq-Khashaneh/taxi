@@ -1,15 +1,14 @@
-// route_notifier.dart
+// RouteEntity_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import '../../../domain/entities/route.dart';
 import '../../../domain/usecases/get_route.dart';
 import '../providers/get_route_provider.dart';
+class RouteEntityNotifier extends StateNotifier<AsyncValue<RouteEntity>> {
+  final GetRouteEntityUseCase getRouteEntityUseCase;
+  RouteEntityNotifier(this.getRouteEntityUseCase) : super(const AsyncValue.loading());
 
-class RouteNotifier extends StateNotifier<AsyncValue<Route>> {
-  final GetRouteUseCase getRouteUseCase;
-  RouteNotifier(this.getRouteUseCase) : super(const AsyncValue.loading());
-
-  Future<void> loadRoute(
+  Future<void> getRouteEntity(
       {required startLat,
       required startLon,
       required endLat,
@@ -18,10 +17,10 @@ class RouteNotifier extends StateNotifier<AsyncValue<Route>> {
 
       final start = LatLng(startLat, startLon);
       final end = LatLng(endLat, endLon);
-      final route =
-          await getRouteUseCase.call(start: start,end: end, );
-      state = AsyncValue.data(route);
-      print("route $route");
+      final RouteEntity =
+          await getRouteEntityUseCase.call(start: start,end: end, );
+      state = AsyncValue.data(RouteEntity);
+      print("RouteEntity $RouteEntity");
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -29,8 +28,8 @@ class RouteNotifier extends StateNotifier<AsyncValue<Route>> {
 }
 
 // provider
-final routeNotifierProvider =
-    StateNotifierProvider<RouteNotifier, AsyncValue<Route>>((ref) {
+final RouteNotifierProvider =
+    StateNotifierProvider<RouteEntityNotifier, AsyncValue<RouteEntity>>((ref) {
   final useCase = ref.watch(getRouteProvider);
-  return RouteNotifier(useCase);
+  return RouteEntityNotifier(useCase);
 });

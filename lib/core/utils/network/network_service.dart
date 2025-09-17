@@ -38,7 +38,8 @@ class NetworkServiceDio implements NetworkService {
           connectTimeout: const Duration(seconds: 8),
           receiveTimeout: const Duration(seconds: 8),
           sendTimeout: const Duration(seconds: 8),
-          headers: {'Content-Type': 'text/xml; charset=utf-8',
+          headers: {
+            'Content-Type': 'text/xml; charset=utf-8',
             "User-Agent": "MyTaxiApp/1.0 (tareq4534@gmail.com)"
           },
         ));
@@ -62,5 +63,4 @@ class NetworkServiceDio implements NetworkService {
     );
     return response;
   }
-
 }

@@ -1,7 +1,8 @@
 import 'package:latlong2/latlong.dart';
+
 import '../../domain/entities/route.dart';
 
-class RouteModel extends Route {
+class RouteModel extends RouteEntity {
 
   RouteModel({
     required super.points,

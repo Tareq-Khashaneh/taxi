@@ -14,7 +14,7 @@
 //
 //   void _navigateTo(BuildContext context, Widget pageName) {
 //     Navigator.of(context).pop(); // Close drawer
-//     Navigator.push(context, MaterialPageRoute(builder: (context) => pageName));
+//     Navigator.push(context, MaterialPageRouteEntity(builder: (context) => pageName));
 //   }
 //
 //   @override

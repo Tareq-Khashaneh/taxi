@@ -1,29 +1,68 @@
 // map_notifier.dart
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:taxi_test/features/map/domain/usecases/search_location_use_case.dart';
+import '../../../domain/entities/place.dart';
 import '../../../domain/entities/user_location.dart';
 import '../../../domain/usecases/get_current_location.dart';
 import '../providers/get_current_location_provider.dart';
+import '../providers/search_place_use_case_provider.dart';
 
-class MapNotifier extends StateNotifier<AsyncValue<UserLocation>> {
+class MapState {
+  final AsyncValue<UserLocation> userLocation;
+  final AsyncValue<Place?> searchResult;
+
+  const MapState({
+    this.userLocation = const AsyncValue.loading(),
+    this.searchResult = const AsyncValue.data(null),
+  });
+  MapState copyWith({
+    AsyncValue<UserLocation>? userLocation,
+    AsyncValue<Place?>? searchResult,
+  }) {
+    return MapState(
+      userLocation: userLocation ?? this.userLocation,
+      searchResult: searchResult ?? this.searchResult,
+    );
+  }
+}
+
+class MapNotifier extends StateNotifier<MapState> {
   final GetCurrentLocationUseCase getCurrentLocation;
+  final SearchPlaceUseCase searchPlaceUseCase;
 
-  MapNotifier(this.getCurrentLocation) : super(const AsyncValue.loading());
+  MapNotifier(this.getCurrentLocation, this.searchPlaceUseCase)
+      : super(const MapState());
   Future<void> loadUserLocation({
     required double lat,
     required double lon,
   }) async {
-    state = const AsyncValue.loading(); // reset to loading before fetch
+    state = state.copyWith(userLocation: const AsyncValue.loading());
+    // reset to loading before fetch
     try {
       final location = await getCurrentLocation.call(lat: lat, lon: lon);
       print("location in notifier${location.latitude}");
-      state = AsyncValue.data(location);
+      state = state.copyWith(userLocation: AsyncValue.data(location));
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      state = state.copyWith(userLocation: AsyncValue.error(e, st));
+    }
+  }
+
+  Future<void> searchPlace({required String query}) async {
+    state = state.copyWith(
+        searchResult:
+            const AsyncValue.loading()); // reset to loading before fetch
+    try {
+      final place = await searchPlaceUseCase.call(query: query);
+      print("location in notifier$place");
+      state = state.copyWith(searchResult: AsyncValue.data(place));
+    } catch (e, st) {
+      state = state.copyWith(searchResult: AsyncValue.error(e, st));
     }
   }
 }
-final mapNotifierProvider =
-StateNotifierProvider<MapNotifier, AsyncValue<UserLocation>>((ref) {
-  final useCase = ref.watch(getCurrentLocationProvider);
-  return MapNotifier(useCase);
+
+final mapNotifierProvider = StateNotifierProvider<MapNotifier, MapState>((ref) {
+  final getCurrentLocation = ref.watch(getCurrentLocationProvider);
+  final searchPlace = ref.watch(searchPlaceUseCaseProvider);
+  return MapNotifier(getCurrentLocation, searchPlace);
 });

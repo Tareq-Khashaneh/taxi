@@ -3,15 +3,15 @@
 // import 'package:openkm_mobile/features/dashboard/presentation/screens/dashboard_screen.dart';
 // import '../../../features/workflow/presentation/pages/workflow_screen.dart';
 //
-// abstract class AppRoutes {
+// abstract class AppRouteEntitys {
 //   static const String splash = '/';
-//   static const String authRoute = '/auth';
-//   static const String dashboardRoute = '/dashboard';
-//   static const String workflowRoute = '/workflow';
+//   static const String authRouteEntity = '/auth';
+//   static const String dashboardRouteEntity = '/dashboard';
+//   static const String workflowRouteEntity = '/workflow';
 //
 //   static Map<String, Widget Function(BuildContext)> pages = {
-//     authRoute: (context) => const Login(),
-//     dashboardRoute: (context) => const DashboardScreen(),
+//     authRouteEntity: (context) => const Login(),
+//     dashboardRouteEntity: (context) => const DashboardScreen(),
 //   };
 //
 // }
