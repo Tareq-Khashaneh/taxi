@@ -18,18 +18,30 @@ class MapScreen extends ConsumerStatefulWidget {
 class _MapScreenState extends ConsumerState<MapScreen> {
   final MapController _mapController = MapController();
   late TextEditingController searchController;
+  late Position position;
+  late String textMessage;
+  late bool isConfirumPickPoint;
   LatLng? _tappedPoint;
 
   @override
   void initState() {
     super.initState();
+
+    isConfirumPickPoint = false;
     _getUserLocation();
     searchController = TextEditingController();
+    _mapController.mapEventStream.listen((event) {
+      if (event is MapEventMoveEnd) {
+        setState(() {
+          _tappedPoint = event.camera.center; // point follows map center
+        });
+      }
+    });
   }
 
   Future<void> _goToMyLocation() async {
     try {
-      final position = await Geolocator.getCurrentPosition();
+      position = await Geolocator.getCurrentPosition();
 
       // بس حرك الماب، لا تعمل setState ولا تغير الـ provider
       _mapController.move(
@@ -45,7 +57,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     LocationPermission permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.always ||
         permission == LocationPermission.whileInUse) {
-      final position = await Geolocator.getCurrentPosition();
+      position = await Geolocator.getCurrentPosition();
       ref.read(mapNotifierProvider.notifier).loadUserLocation(
             lat: position.latitude,
             lon: position.longitude,
@@ -70,6 +82,24 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     });
   }
 
+  Future<void> _setPoint() async {
+    final userLocation = ref.read(mapNotifierProvider).userLocation.maybeWhen(
+          data: (location) => location, // <-- this is your UserLocation
+          orElse: () => null,
+        );
+
+    if (userLocation != null) {
+      setState(() {
+        isConfirumPickPoint = true;
+        _tappedPoint = LatLng(
+          userLocation.latitude,
+          userLocation.longitude,
+        );
+      });
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final userLocationAsync =
@@ -92,27 +122,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   initialCenter: userLatLng,
                   initialZoom: 16,
                   onTap: (tapPosition, point) async {
-                    setState(() {
-                      _tappedPoint = point;
-                    });
-                    final userLocation =
-                        ref.read(mapNotifierProvider).userLocation.maybeWhen(
-                              data: (loc) => loc,
-                              orElse: () => null,
-                            );
-
-                    if (userLocation != null) {
-                      // Trigger RouteEntityNotifier
-
-                      await ref
-                          .read(RouteNotifierProvider.notifier)
-                          .getRouteEntity(
-                            startLat: userLocation.latitude,
-                            startLon: userLocation.longitude,
-                            endLat: point.latitude,
-                            endLon: point.longitude,
-                          );
-                    }
+                  //   setState(() {
+                  //     _tappedPoint = point;
+                  //   });
+                  //   final userLocation =
+                  //       ref.read(mapNotifierProvider).userLocation.maybeWhen(
+                  //             data: (loc) => loc,
+                  //             orElse: () => null,
+                  //           );
+                  //
+                  //
                   },
                 ),
                 children: [
@@ -160,7 +179,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   child: CustomField(
                     controller: searchController,
                     onSubmit: (_) => _searchPlace(),
-                    prefixIcon: const Icon(
+                    suffixIcon: const Icon(
                       Icons.location_on,
                       color: Colors.red,
                       size: 30,
@@ -172,14 +191,34 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToMyLocation,
-        child: const Icon(
-          Icons.gps_fixed,
-          color: Colors.blue,
-          size: 30,
-        ),
+      floatingActionButton:
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          isConfirumPickPoint ?
+          FloatingActionButton.extended(
+            onPressed: _setPoint,
+            label: Text("Confirm order"),
+            icon: const Icon(Icons.location_on),
+            backgroundColor: Colors.blue,
+          ):
+          FloatingActionButton.extended(
+            onPressed: _setPoint,
+            label: Text("Set pick-up point"),
+            icon: const Icon(Icons.location_on),
+            backgroundColor: Colors.blue,
+          ),
+          FloatingActionButton(
+            onPressed: _goToMyLocation,
+            child: const Icon(
+              Icons.gps_fixed,
+              color: Colors.blue,
+              size: 30,
+            ),
+          ),
+        ],
       ),
+
     );
   }
 }
