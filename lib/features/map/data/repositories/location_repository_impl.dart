@@ -25,7 +25,7 @@ class LocationRepositoryImpl implements LocationRepository {
   }
 
   @override
-  Future<PlaceModel> searchPlace({required String query}) async {
-    return await locationRemoteDataSource.searchPlace(query: query);
+  Future<List<PlaceModel>> searchPlaces({required String query}) async {
+    return await locationRemoteDataSource.searchPlaces(query: query);
   }
 }

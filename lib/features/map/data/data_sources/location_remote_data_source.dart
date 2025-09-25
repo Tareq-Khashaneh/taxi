@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:taxi_test/core/utils/error/exceptions.dart';
 import 'package:taxi_test/features/map/data/models/place_model.dart';
 import 'package:taxi_test/features/map/data/models/user_location_model.dart';
 
@@ -8,7 +9,7 @@ import '../../../../core/utils/network/network_service.dart';
 abstract class LocationRemoteDataSource {
   Future<UserLocationModel> getLocation(
       {required double lat, required double lon});
-  Future<PlaceModel> searchPlace({required String query});
+  Future<List<PlaceModel>> searchPlaces({required String query});
 }
 
 class LocationRemoteDataSourceImpl extends LocationRemoteDataSource {
@@ -36,7 +37,7 @@ class LocationRemoteDataSourceImpl extends LocationRemoteDataSource {
   }
 
   @override
-  Future<PlaceModel> searchPlace({required String query}) async {
+  Future<List<PlaceModel>> searchPlaces({required String query}) async {
     final response = await _networkService.request(
       endpoint: "${Api.baseNominatimUrl}${Api.searchPlaces}",
       method: RequestMethod.get,
@@ -45,11 +46,11 @@ class LocationRemoteDataSourceImpl extends LocationRemoteDataSource {
     print("response $response");
     List<PlaceModel> places = [];
     if (response.statusCode == 200) {
-      for(var data in response.data){
-         places.add(PlaceModel.fromJson(data));
+      for (var data in response.data) {
+        places.add(PlaceModel.fromJson(data));
       }
-      return places[0];
-      }
+      return places;
+    }
     throw DioException(
       response: response,
       requestOptions: response.requestOptions,

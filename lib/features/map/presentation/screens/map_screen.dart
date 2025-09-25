@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:taxi_test/core/shared/custom_field.dart';
+import 'package:taxi_test/features/map/presentation/screens/set_pick_up_point_screen.dart';
 import '../../domain/entities/route.dart';
 import '../revierpod/state_notifiers/map_notifer.dart';
 import '../revierpod/state_notifiers/route_notifier.dart';
@@ -19,24 +19,10 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   final MapController _mapController = MapController();
   late TextEditingController searchController;
   late Position position;
-  late String textMessage;
-  late bool isConfirumPickPoint;
-  LatLng? _tappedPoint;
-
   @override
   void initState() {
     super.initState();
-
-    isConfirumPickPoint = false;
     _getUserLocation();
-    searchController = TextEditingController();
-    _mapController.mapEventStream.listen((event) {
-      if (event is MapEventMoveEnd) {
-        setState(() {
-          _tappedPoint = event.camera.center; // point follows map center
-        });
-      }
-    });
   }
 
   Future<void> _goToMyLocation() async {
@@ -65,48 +51,34 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     }
   }
 
-  Future<void> _searchPlace() async {
-    if (searchController.text.isEmpty) return;
-    print("searchResult ${searchController.text}}");
-    await ref
-        .read(mapNotifierProvider.notifier)
-        .searchPlace(query: searchController.text);
-    final searchResult =
-        ref.read(mapNotifierProvider.select((s) => s.searchResult));
-    print("searchResult $searchResult}");
-    searchResult.whenData((place) {
-      if (place != null) {
-        _mapController.move(
-            LatLng(place.lat, place.lon), _mapController.camera.zoom);
-      }
-    });
+  double calculatePrice(double distanceMeters) {
+    // Example: base fare + per km
+    const baseFare = 3.0; // $
+    const pricePerKm = 1.2; // $ per km
+
+    final km = distanceMeters / 1000;
+    return baseFare + (km * pricePerKm);
   }
-
-  Future<void> _setPoint() async {
-    final userLocation = ref.read(mapNotifierProvider).userLocation.maybeWhen(
-          data: (location) => location, // <-- this is your UserLocation
-          orElse: () => null,
-        );
-
-    if (userLocation != null) {
-      setState(() {
-        isConfirumPickPoint = true;
-        _tappedPoint = LatLng(
-          userLocation.latitude,
-          userLocation.longitude,
-        );
-      });
-    }
-  }
-
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RouteEntity>>(routeNotifierProvider,
+        (previous, next) {
+      next.whenData((route) {
+        if (route.points.isNotEmpty) {
+          final bounds = LatLngBounds.fromPoints(route.points);
+
+          _mapController.fitCamera(
+            CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(50)),
+          );
+        }
+      });
+    });
     final userLocationAsync =
         ref.watch(mapNotifierProvider.select((s) => s.userLocation));
     ref.watch(mapNotifierProvider.select((s) => s.searchResult));
 
-    final routeState = ref.watch(RouteNotifierProvider);
+    final routeState = ref.watch(routeNotifierProvider);
     return Scaffold(
       body: userLocationAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -121,18 +93,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                 options: MapOptions(
                   initialCenter: userLatLng,
                   initialZoom: 16,
-                  onTap: (tapPosition, point) async {
-                  //   setState(() {
-                  //     _tappedPoint = point;
-                  //   });
-                  //   final userLocation =
-                  //       ref.read(mapNotifierProvider).userLocation.maybeWhen(
-                  //             data: (loc) => loc,
-                  //             orElse: () => null,
-                  //           );
-                  //
-                  //
-                  },
                 ),
                 children: [
                   // Map tiles
@@ -150,12 +110,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                         child: const Icon(Icons.circle,
                             color: Colors.blue, size: 35),
                       ),
-                      if (_tappedPoint != null)
-                        Marker(
-                          point: _tappedPoint!,
-                          child: const Icon(Icons.location_pin,
-                              color: Colors.red, size: 40),
-                        ),
                     ],
                   ),
 
@@ -172,43 +126,51 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                     ),
                 ],
               ),
-              Positioned(
-                  top: 40,
-                  left: 15,
-                  right: 15,
-                  child: CustomField(
-                    controller: searchController,
-                    onSubmit: (_) => _searchPlace(),
-                    suffixIcon: const Icon(
-                      Icons.location_on,
-                      color: Colors.red,
-                      size: 30,
+              if (routeState is AsyncData<RouteEntity>)
+                Positioned(
+                  bottom: 80,
+                  left: 20,
+                  right: 20,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12.0),
+                      child: Builder(builder: (_) {
+                        final route = routeState.value;
+                        final km = (route.distance / 1000).toStringAsFixed(2);
+                        final durationMin =
+                            (route.duration / 60).toStringAsFixed(0);
+                        final price =
+                            calculatePrice(route.distance).toStringAsFixed(2);
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text("Distance: $km km"),
+                            Text("Duration: $durationMin min"),
+                            Text("Price: \$$price"),
+                          ],
+                        );
+                      }),
                     ),
-                    hint: "Search here",
-                    borderRadius: 30,
-                  )),
+                  ),
+                ),
             ],
           );
         },
       ),
-      floatingActionButton:
-      Row(
+      floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          isConfirumPickPoint ?
           FloatingActionButton.extended(
-            onPressed: _setPoint,
-            label: Text("Confirm order"),
-            icon: const Icon(Icons.location_on),
-            backgroundColor: Colors.blue,
-          ):
-          FloatingActionButton.extended(
-            onPressed: _setPoint,
-            label: Text("Set pick-up point"),
+            onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const SetPickUpPointScreen())),
+            label: const Text("Set pick-up point"),
             icon: const Icon(Icons.location_on),
             backgroundColor: Colors.blue,
           ),
           FloatingActionButton(
+            heroTag: "goToLocationBtn",
             onPressed: _goToMyLocation,
             child: const Icon(
               Icons.gps_fixed,
@@ -218,7 +180,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           ),
         ],
       ),
-
     );
   }
 }

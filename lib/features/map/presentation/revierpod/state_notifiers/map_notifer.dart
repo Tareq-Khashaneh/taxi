@@ -9,15 +9,15 @@ import '../providers/search_place_use_case_provider.dart';
 
 class MapState {
   final AsyncValue<UserLocation> userLocation;
-  final AsyncValue<Place?> searchResult;
+  final AsyncValue<List<Place>> searchResult;
 
   const MapState({
     this.userLocation = const AsyncValue.loading(),
-    this.searchResult = const AsyncValue.data(null),
+    this.searchResult = const AsyncValue.data([]),
   });
   MapState copyWith({
     AsyncValue<UserLocation>? userLocation,
-    AsyncValue<Place?>? searchResult,
+    AsyncValue<List<Place>>? searchResult,
   }) {
     return MapState(
       userLocation: userLocation ?? this.userLocation,
@@ -47,14 +47,13 @@ class MapNotifier extends StateNotifier<MapState> {
     }
   }
 
-  Future<void> searchPlace({required String query}) async {
+  Future<void> searchPlaces({required String query}) async {
     state = state.copyWith(
         searchResult:
             const AsyncValue.loading()); // reset to loading before fetch
     try {
-      final place = await searchPlaceUseCase.call(query: query);
-      print("location in notifier$place");
-      state = state.copyWith(searchResult: AsyncValue.data(place));
+      final List<Place> places = await searchPlaceUseCase.call(query: query);
+      state = state.copyWith(searchResult: AsyncValue.data(places));
     } catch (e, st) {
       state = state.copyWith(searchResult: AsyncValue.error(e, st));
     }

@@ -7,5 +7,5 @@ import '../entities/user_location.dart';
 abstract class LocationRepository {
   Future<UserLocation> getCurrentLocation({required double lat,required double lon});
   Future<RouteEntity> getRouteEntity({required LatLng start, required LatLng end});
-  Future<Place> searchPlace({required String query});
+  Future<List<Place>> searchPlaces({required String query});
 }
